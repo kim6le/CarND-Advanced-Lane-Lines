@@ -2,7 +2,7 @@
 # Advanced Lane Finding Project
 
 The related files are: 
-* The writeup: this document you are looking now.
+* The writeup: this document you are reading now.
 * Python code: `proj4.py`
 * The generated video file: `result.mp4`
 
