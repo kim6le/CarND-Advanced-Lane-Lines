@@ -302,6 +302,9 @@ def process_image(image):
     # Now our radius of curvature is in meters
     #print('Curvature= ',center_curverad, 'm')
     #.....................................................................
+    offset= (avg_fitx[-1]-640)*xm_per_pix
+    #print('Offset= ',offset,'m')
+    #.....................................................................
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
@@ -319,12 +322,23 @@ def process_image(image):
     # Combine the result with the original image
     result = cv2.addWeighted(undistorted, 1, newwarp, 0.3, 0)
 
+    if offset >0:
+        side_pos='left'
+    elif offset <0:
+        side_pos='right'
+    else:
+        side_pos=' '
+
+    cv2.putText(result,'Radius of Curvature='+str(round(center_curverad,3))+'(m)',(50,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+    
+    cv2.putText(result,'Vehicle is '+str(abs(round(offset,3)))+'m '+side_pos+' of center',(50,100),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+
     return result
 
 ######################################################
 
 #from moviepy.editor import VideoFileClip
-import os
+import os 
 from moviepy.editor import VideoFileClip
 
 video_output = 'result.mp4'
