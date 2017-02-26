@@ -662,20 +662,36 @@ for image in images:
  
     
 
-    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
-    f.tight_layout()
-    ax1.imshow(img)
-    ax1.set_title('Original Image', fontsize=50)
+    #.....................................................................
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(warped).astype(np.uint8)
+    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = cv2.warpPerspective(color_warp, Minv, (img.shape[1], img.shape[0])) 
+    # Combine the result with the original image
+    result = cv2.addWeighted(undistorted, 1, newwarp, 0.3, 0)
+
+    if offset >0:
+        side_pos='left'
+    elif offset <0:
+        side_pos='right'
+    else:
+        side_pos=' '
+
+    cv2.putText(result,'Radius of Curvature='+str(round(center_curverad,3))+'(m)',(50,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
     
-    ax2.imshow(out_img,'gray')
-    ax2.plot(left_fitx, ploty, color='yellow')
-    ax2.plot(right_fitx, ploty, color='yellow')
-    ax2.plot(avg_fitx, ploty, color='yellow')
-    plt.xlim(0, 1280)
-    plt.ylim(720, 0)
-    
-    ax2.set_title('The finded Lane Boundary', fontsize=50)
-    plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
+    cv2.putText(result,'Vehicle is '+str(abs(round(offset,3)))+'m '+side_pos+' of center',(50,100),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+    plt.figure()
+    plt.imshow(result)
 ```
 
     /Users/adm/anaconda/envs/keras/lib/python3.5/site-packages/ipykernel/__main__.py:5: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
@@ -737,21 +753,12 @@ In this final section, I put all functions together, and plotted back down onto 
 
 
 ```python
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (img.shape[1], img.shape[0]),None,None)
-```
-
-
-```python
 def process_image(image):
-    # NOTE: The output you return should be a color image (3 channel) for processing video below
-    # TODO: put your pipeline here,
-    # you should return the final output (image with lines are drawn on lanes)
-    global mtx,dist
-    #img = cv2.imread(image)
-    #img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-    img=np.copy(image)
-    undistorted = cv2.undistort(img, mtx, dist, None, mtx)
+    img = cv2.imread(image)
+    img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     
+    
+    undistorted = cv2.undistort(img, mtx, dist, None, mtx)
     combined=thresholded_binary(undistorted)
     warped, Minv = perspective_transform(combined)
     out_img, left_fitx, right_fitx, ploty = finding_lines(warped)
@@ -763,6 +770,7 @@ def process_image(image):
     y_eval = np.max(ploty)
     center_curverad = ((1 + (2*center_fit[0]*y_eval + center_fit[1])**2)**1.5) / np.absolute(2*center_fit[0])
     #print(center_curverad)
+    # Example values: 1926.74 1908.48
     #.....................................................................
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 30/720 # meters per pixel in y dimension
@@ -773,10 +781,12 @@ def process_image(image):
     # Calculate the new radii of curvature
     center_curverad = ((1 + (2*center_fit_cr[0]*y_eval*ym_per_pix + center_fit_cr[1])**2)**1.5) / np.absolute(2*center_fit_cr[0])
     # Now our radius of curvature is in meters
-    #print('Curvature= ',center_curverad, 'm')
+    print('Curvature= ',center_curverad, 'm')
+    # Example values: 632.1 m    626.2 m
     #.....................................................................
     offset= (avg_fitx[-1]-640)*xm_per_pix
-    #print('Offset= ',offset,'m')
+    print('Offset= ',offset,'m')
+    
     #.....................................................................
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped).astype(np.uint8)
@@ -796,9 +806,9 @@ def process_image(image):
     result = cv2.addWeighted(undistorted, 1, newwarp, 0.3, 0)
 
     if offset >0:
-        side_pos='right'
-    elif offset <0:
         side_pos='left'
+    elif offset <0:
+        side_pos='right'
     else:
         side_pos=' '
 
@@ -819,42 +829,7 @@ for image in images:
     plt.imshow(result)
 ```
 
-    /Users/adm/anaconda/envs/keras/lib/python3.5/site-packages/ipykernel/__main__.py:5: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-
-
-
-![png](output_42_1.png)
-
-
-
-![png](output_42_2.png)
-
-
-
-![png](output_42_3.png)
-
-
-
-![png](output_42_4.png)
-
-
-
-![png](output_42_5.png)
-
-
-
-![png](output_42_6.png)
-
-
-
-![png](output_42_7.png)
-
-
-
-![png](output_42_8.png)
-
-
-The following codes are used for generating video file.
+The following codes are used for generating video file. You have to run the python code: `proj4.py`.
 
 
 ```python
