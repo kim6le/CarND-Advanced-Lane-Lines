@@ -847,6 +847,16 @@ video_clip.write_videofile(video_output, audio=False)
 
 ** Finally, the generated video file is `result.mp4`.**
 
+# Discussion
+
+### Discussion includes some consideration of problems/issues faced, what could be improved about their algorithm/pipeline, and what hypothetical cases would cause their pipeline to fail.
+
+* The most important problem I faced is that the pipeline cannot achieve real time computation. The length of the provided video clip is about 50 seconds. However, the processing time is about 20 minutes on my desktop. Recently, I would like to implement the pipeline to an embedded system, something like arduino or Raspberry Pi, but computational time will be a big problem.
+
+* Next, the threshold binary image creation plays an important role in the pipeline, but I feel the trial and error process is somewhat ad hoc. Maybe there are better systematic methods for obtaining good performance.
+* In first project, we use Hough Transform to detect a line, I wonder why we do not adopt or improve this method again in this project. I would like to try to adopt line detection algorithms in the future.
+
+
 
 ```python
 
